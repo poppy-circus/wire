@@ -12,7 +12,8 @@ module.exports = function(grunt) {
     clean:        getConfigOf('clean'),
     jasmine_node: getConfigOf('jasmine'),
     jsdoc:        getConfigOf('jsdoc'),
-    jshint:       getConfigOf('jshint')
+    jshint:       getConfigOf('jshint'),
+    lodash:       getConfigOf('lodash')
   });
 
   grunt.loadNpmTasks('grunt-contrib-clean');
@@ -20,6 +21,7 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-jasmine-node');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-jsdoc');
+  grunt.loadNpmTasks('grunt-lodash');
 
   grunt.loadTasks('tasks');
   grunt.registerTask('default', ['jshint', 'jasmine_node']);
