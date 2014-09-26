@@ -149,6 +149,12 @@ require([
           wire.updateIndex('foo', 'bar');
           expect(wire.getKnotInfo().index.foo).toBe('bar');
         });
+
+        it('uses the knot namespace if namespace argument is missing', function() {
+          var wire = new Wire('knot');
+          wire.updateIndex('foo');
+          expect(wire.getKnotInfo().index.foo).toBe('knot');
+        });
       });
 
       describe('::getKnotData', function() {
@@ -200,6 +206,27 @@ require([
             .branch({child: 2}, 'transitve');
 
           expect(knot.getWireData('knot/direct'))
+            .toEqual({ child: 1 });
+        });
+
+        it('can return data by a specific namespace shortcut from the default index', function() {
+          var wire = new Wire('knot', {knot: 0});
+          var knot = wire
+            .branch({child: 1}, 'direct')
+            .branch({child: 2}, 'transitve');
+
+          expect(knot.getWireData('direct'))
+            .toEqual({ child: 1 });
+        });
+
+        it('can return data by a specific self-defined namespace shortcut from the index', function() {
+          var wire = new Wire('knot', {knot: 0});
+          var knot = wire
+            .branch({child: 1}, 'direct')
+            .branch({child: 2}, 'transitve');
+
+          knot.updateIndex('shortcut', 'knot/direct');
+          expect(knot.getWireData('shortcut'))
             .toEqual({ child: 1 });
         });
 

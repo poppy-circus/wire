@@ -273,6 +273,7 @@ define([
    * Get the full data set from a knot.
    * The difference to `knotData` is, that the wire data
    * is merged with data from upper hierarchy in the wire.
+   * It is also possible to use a label from the index as namespace shortcut.
    *
    * Wire data can not be changed anymore unless client objects request
    * a `sync`.
@@ -301,6 +302,8 @@ define([
 
     if (!this._wireData)
       this._recall();
+
+    namespace = this._index[namespace] || namespace;
 
     return namespace ?
       this._wireData[namespace] || {} :
@@ -378,11 +381,15 @@ define([
    * update index by `_.getKnoteInfo().index.label = 'namespace'`.
    *
    * @param {String} label - The index name.
-   * @param {String} namespace - The index value.
+   * @param {String=} namespace - The index value.
+   *                            If not defined the own namespace is used.
    *
    * @function Wire#updateIndex
    */
   proto.updateIndex = function(label, namespace) {
+    if (!namespace)
+      namespace = this._namespace;
+
     this._index[label] = namespace;
   };
 
