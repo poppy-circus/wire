@@ -751,46 +751,77 @@ define([
   // with values from upper hierarchy
 
   proto._recall = function() {
+    
     var parent = this._parent,
-        routes   = this.getRoutes(),
-        knotInfo = this.getKnotInfo(),
-        index = this._index = {},
-        knotData = {},
-        label, wireData;
+        label  = this._label,
+        index  = this._index,
+        routes = this.getRoutes(),
+        knotData  = {},
+        namespace = this._namespace,
+        wireData, parentIndex;
 
     // construct wire data object
 
-    knotData[this._namespace] = this._knotData;
-    var parentData = parent === this ? // avoid cycles
-      undefined :
-      parent.getWireData();
-
+    knotData[namespace] = this._knotData;
     wireData = this._wireData = merge({},
-      parentData,
+      (parent === this ? undefined : parent.getWireData()), // avoid cycles
       knotData
     );
 
-    // build index
-
-    forEach(wireData, function(data, namespace) {
-      label = namespace.split('/');
-      label = label[label.length - 1];
-
-      if (!index[label])
-        index[label] = namespace;
-
-      else if (typeof index[label].push === 'function')
-        index[label].push(namespace);
-
-      else
-        index[label] = [index[label], namespace];
-    });
-
     // apply routes
 
-    forEach(routes, function(reaction, name) {
+    forEach(routes, function(route, name) {
       this[name] = createRouteDelegate(name);
     }, this);
+
+    // build index
+
+    if (!index) {
+      index = {};
+      index[label] = namespace;
+    }
+
+    parentIndex = (parent !== this) ?
+      clone(parent.getKnotInfo().index, true) :
+      {};
+
+    forEach(parentIndex, function(namespace, label) {
+      this._updateIndex(index, label, namespace);
+    }, this);
+
+    this._index = index;
+  };
+
+  // helper to update the index
+  // reduces _recall method complexity
+
+  proto._updateIndex = function(index, label, namespace) {
+
+    var labelIndex = index[label];
+
+    if (typeof namespace.push !== 'function')
+      namespace = [namespace];
+
+    forEach(namespace, function(namespace) {
+      switch (true) {
+
+        // creates a simple index
+        case !labelIndex: 
+          index[label] = namespace;
+          break;
+
+        // append to a complex index
+        case typeof labelIndex.push === 'function': 
+          if(indexOf(labelIndex, namespace) === -1)
+            labelIndex.push(namespace);
+          break;
+
+        // coverts a simple to a complex index
+        case labelIndex !== namespace: 
+          index[label] = [labelIndex, namespace];
+          break;
+      }
+    });
   };
 
   return Wire;

@@ -270,7 +270,7 @@ require([
 
       describe('::sync', function() {
 
-        it('rebuilds the wire data', function() {
+        xit('rebuilds the wire data', function() {
           var wire = new Wire('knot', {knot: 0});
           var knot = wire
             .branch({knot: 1}, 'direct')
@@ -299,12 +299,26 @@ require([
           });
 
           it('rebuilds the index', function() {
-            wire.getKnotInfo().index.foo = 'bar';
             wire.sync();
 
             expect(knot.getKnotInfo().index)
               .toEqual({
                 knot: 'knot',
+                direct: 'knot/direct',
+                transitve: 'knot/direct/transitve'
+              });
+          });
+
+          it('inherites self defined namespace shortcuts', function() {
+            wire.getKnotInfo().index.foo = 'bar';
+            knot.getKnotInfo().index.abc = 'xyz';
+            wire.sync();
+
+            expect(knot.getKnotInfo().index)
+              .toEqual({
+                knot: 'knot',
+                foo: 'bar',
+                abc: 'xyz',
                 direct: 'knot/direct',
                 transitve: 'knot/direct/transitve'
               });
@@ -320,9 +334,34 @@ require([
               .toEqual({
                 knot: 'knot',
                 direct: [
+                  'knot/direct/transitve/direct/direct',
                   'knot/direct',
-                  'knot/direct/transitve/direct',
-                  'knot/direct/transitve/direct/direct'
+                  'knot/direct/transitve/direct'                  
+                ],
+                transitve: 'knot/direct/transitve'
+              });
+          });
+
+          it('creates an array of inherited namespace shortcuts', function() {
+            knot = knot
+              .branch(undefined, 'direct')
+              .branch(undefined, 'direct');
+
+            wire.getKnotInfo().index.foo = 'abc';
+            knot.getKnotInfo().index.foo = 'xyz';
+            wire.sync();
+
+            expect(knot.getKnotInfo().index)
+              .toEqual({
+                knot: 'knot',
+                foo: [
+                  'xyz',
+                  'abc'
+                ],
+                direct: [
+                  'knot/direct/transitve/direct/direct',
+                  'knot/direct',
+                  'knot/direct/transitve/direct'                  
                 ],
                 transitve: 'knot/direct/transitve'
               });
