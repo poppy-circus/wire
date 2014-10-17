@@ -15,6 +15,7 @@
           exports: ['amd'],
           include: [
             'forEach',
+            'indexOf',
             'merge',
             'clone'
           ],

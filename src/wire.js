@@ -6,9 +6,10 @@ define([
 
   'use strict';
 
-  var forEach = lodash.forEach;
   var clone = lodash.clone;
   var merge = lodash.merge;
+  var forEach = lodash.forEach;
+  var indexOf = lodash.indexOf;
 
   // used to give knots a label when not defined in branch method
 
