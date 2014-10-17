@@ -75,7 +75,7 @@ define([
     return result;
   };
 
-  // creates a delegate function for a reaction
+  // creates a delegate function for a route
 
   var createRouteDelegate = function(name) {
 
@@ -86,7 +86,7 @@ define([
 
       try {
 
-        // asure that the reaction is called in the knot scope
+        // asure that the route is called in the knot scope
         // a client may use lodash.bind, therefore the knot reference
         // is attached to the end of the argument list
 
@@ -107,19 +107,19 @@ define([
    * ### It is focused on the following aspects:
    *
    * - **composition**, expanding the wire by building data trees
-   *                    and allow data access
+   *   and allow data access
    * - **binding**, allow the wire to access dynamic data
    * - **state**, allow the wire to manage states besides data structures
    * - **command**, allow the wire to delegate the data to
-   *                data handler functions
+   *   data handler functions
    *
    * ### It is not responsible for:
    *
    * - **mapping**, there is no generic solution for mapping. It is always
-   *                bounded to specific project requirements and therefore not
-   *                included. Mapping must be designed as a pre- or post job.
-   *                The only mapping helper that is available, is the mapping
-   *                of data namespaces by a knot index.
+   *   bounded to specific project requirements and therefore not
+   *   included. Mapping must be designed as a pre- or post job.
+   *   The only mapping helper that is available, is the mapping
+   *   of data namespaces by a knot index.
    *
    * ### Working with the wire
    *
@@ -151,9 +151,9 @@ define([
    * wire data of a knot and its childs. Second option is to use `routes`.
    * Routes are defined as a collection of functions that are applied to a
    * socket knot. Each subordinated knot of a socket will include a delegate
-   * function to the reaction, where dynamic data can be assigned to as an
+   * function to the target as route, where dynamic data can be assigned to as an
    * argument. In this case the wire doesn`t care about the data at all, it just
-   * delegates it. (A reaction will know about the invoker knot, because the
+   * delegates it. (A route setup will know about the invoker knot, because the
    * reference is attached to the argument list as its last argument).
    *
    * A last option is possible by using the `shared runtime`. Each knot allows
@@ -217,7 +217,7 @@ define([
     // they became delegated to a socket and then processed by routes
 
     this._knotData = data || {}; // includes the initial data after construction
-    this._wireData = undefined;  // includes the full data set
+    this._wireData = undefined;  // includes the full data set to the next socket in upper hierarchy
 
     // array of functions that are applied to the wire to receive dynamic data
     // during runtime - the functions arent called with any argument
@@ -383,7 +383,8 @@ define([
    *
    * @param {String} label - The index name.
    * @param {String=} namespace - The index value.
-   *                            If not defined the own namespace is used.
+   * If not defined the own namespace is used.
+   *
    *
    * @function Wire#updateIndex
    */
@@ -536,7 +537,7 @@ define([
    * //share knot state
    * var otherKnot = socket.branch({}, 'foo', knot.getKnotInfo().state);
    *
-   * @see KnotInfo#state
+   * @see KnotInfo
    * @see Wire#fetch
    * @function Wire#branch
    */
@@ -717,18 +718,18 @@ define([
    * Converts a knot in the wire to a new socket.
    *
    * Routes are delegated to the next socket of a knot to process further
-   * actions. The reaction is called within the scope of the affected knot.
+   * actions. The route is called within the scope of the affected knot.
    * All arguments are delegated and appended by the knot itself as the last
-   * argument. Errors in a reaction function are swollowed!
+   * argument. Errors in a route function are swollowed!
    *
    * @param {Object=} routes - a collections of functions that
    *        can be used in the wire as command instructions.
    *
    * @example
-   * var reaction = function() { return this; }
+   * var route = function() { return this; }
    *
    * var wire = new Wire('wire');
-   * wire.insulate({myRoute: reaction});
+   * wire.insulate({myRoute: route});
    *
    * var knot = wire.branch();
    * knot.myRoute(); //knot
