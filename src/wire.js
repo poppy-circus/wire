@@ -305,7 +305,6 @@ define([
       this._recall();
 
     namespace = this._index[namespace] || namespace;
-
     return namespace ?
       this._wireData[namespace] || {} :
       this._wireData;
@@ -340,8 +339,8 @@ define([
     // namespace and label can not be modified
 
     return {
+      namespace: this._namespace,
       label: this._label,
-      namespace:  this._namespace,
       index: this._index,
       state: this._state
     };
@@ -356,10 +355,9 @@ define([
    * @function Wire#getRoutes
    */
   proto.getRoutes = function() {
-    if (this._socket === this)
-      return this._routes;
-
-    return this._socket.getRoutes();
+    return this._socket === this ?
+      this._routes :
+      this._socket.getRoutes();
   };
 
   /**
@@ -702,7 +700,7 @@ define([
 
     // dispose routes
 
-    forEach(this.getRoutes(), function(reaction, name) {
+    forEach(this.getRoutes(), function(route, name) {
       delete this[name];
     }, this);
 
