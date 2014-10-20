@@ -1,0 +1,28 @@
+<html>
+  <head>
+    <title>Wire Demo Page</title>
+    <!-- forces IE to use standard mode (not Quirks mode) //-->
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
+    <script type="text/javascript" src="../node_modules/requirejs/require.js"></script>
+
+    <script type="text/javascript">
+      function init() {
+        require.config({
+          baseUrl: '..'
+        });
+
+        require([
+          'src/wire'
+        ], function(
+          Wire
+        ) {
+          window.Wire = Wire;
+        });
+      }
+    </script>
+  </head>
+
+  <body onLoad="init();">
+  <h1>Wire Demo Page</h1>
+  </body>
+</html>
