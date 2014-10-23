@@ -61,22 +61,21 @@ require([
         describe('-state', function() {
 
           it('create a state object if not defined', function() {
-            expect(new Wire('knot').getKnotInfo().state).toEqual({});
+            expect(new Wire('knot').getStates().knot).toEqual({});
           });
 
-          it('shares the state values from the knoteInfo argument', function() {
+          it('shares the state values from the state argument', function() {
             var state = {foo: 'bar'};
 
-            expect(new Wire('knot', undefined, state).getKnotInfo().state)
+            expect(new Wire('knot', undefined, state).getStates().knot)
               .toEqual(state);
           });
 
-          it('clones the state values from the knoteInfo argument', function() {
+          it('clones the state values from the state argument', function() {
             var state = {foo: 'bar'};
 
-            expect(new Wire('knot', undefined, {
-              state: state
-            }).getKnotInfo().state).not.toBe(state);
+            expect(new Wire('knot', undefined, state).getStates().knot)
+              .not.toBe(state);
           });
         });
       });
@@ -97,30 +96,19 @@ require([
           expect(info).toEqual({
             label: 'knot',
             namespace: 'wire/knot',
-            index: { knot: 'wire/knot' },
-            state: { foo: 'bar' }
+            index: { knot: 'wire/knot' }
           });
         });
 
-        it('prevents manipulation of `label`, `namespace`, `index` and `state`', function() {
+        it('prevents manipulation of `label`, `namespace` and `index`', function() {
           info.label = 'manipulated';
           info.namespace = 'manipulated';
-          info.state = 'manipulated';
           info.index = 'manipulated';
 
           expect(wire.getKnotInfo()).toEqual({
             label: 'knot',
             namespace: 'wire/knot',
-            index: { knot: 'wire/knot' },
-            state: { foo: 'bar' }
-          });
-        });
-
-        it('allows to manipulate the internals of the state object', function() {
-          info.state.bar = 'foo';
-          expect(wire.getKnotInfo().state).toEqual({
-            foo: 'bar',
-            bar: 'foo'
+            index: { knot: 'wire/knot' }
           });
         });
 
@@ -135,10 +123,10 @@ require([
 
       describe('::applyState', function() {
 
-        it('represents a convenient way to modify the state', function() {
+        it('adds a state to the knot', function() {
           var wire = new Wire('knot');
           wire.applyState('foo', 'bar');
-          expect(wire.getKnotInfo().state.foo).toBe('bar');
+          expect(wire.getStates('knot').foo).toBe('bar');
         });
       });
 
@@ -336,7 +324,7 @@ require([
                 direct: [
                   'knot/direct/transitve/direct/direct',
                   'knot/direct',
-                  'knot/direct/transitve/direct'                  
+                  'knot/direct/transitve/direct'
                 ],
                 transitve: 'knot/direct/transitve'
               });
@@ -361,7 +349,7 @@ require([
                 direct: [
                   'knot/direct/transitve/direct/direct',
                   'knot/direct',
-                  'knot/direct/transitve/direct'                  
+                  'knot/direct/transitve/direct'
                 ],
                 transitve: 'knot/direct/transitve'
               });
@@ -481,12 +469,9 @@ require([
           describe('-state', function() {
 
             it('delegates the value to the new Wire instance if defined', function() {
-              expect(wire.branch(undefined, 'knot', {foo: 'bar'}).getKnotInfo())
+              expect(wire.branch(undefined, 'knot', {foo: 'bar'}).getStates('wire/knot'))
                 .toEqual({
-                  label: 'knot',
-                  namespace: 'wire/knot',
-                  index: { wire: 'wire', knot: 'wire/knot' },
-                  state: { foo: 'bar' }
+                  foo: 'bar'
                 });
             });
           });
@@ -647,7 +632,7 @@ require([
           });
 
           it('keeps the state value', function() {
-            expect(childLevel3.getKnotInfo().state).toEqual({foo: 'bar'});
+            expect(childLevel3.getStates('childLevel3')).toEqual({foo: 'bar'});
           });
 
           it('keeps the localData dependency', function() {
@@ -691,6 +676,65 @@ require([
             'knot/direct': {},
             'knot/direct/transitive': {}
           });
+        });
+      });
+
+      describe('::getStates', function() {
+
+        var wire;
+
+        beforeEach(function() {
+          wire = new Wire('root');
+        });
+
+        it('returns an empty object with the knot namespace by default', function() {
+          expect(wire.getStates()).toEqual({
+            root: {}
+          });
+        });
+
+        it('appends a state to the namespace', function() {
+          wire.applyState('foo', 'bar');
+          expect(wire.getStates()).toEqual({
+            root: { foo: 'bar' }
+          });
+        });
+
+        it('overrides exsisting values', function() {
+          wire.applyState('state', 'foo');
+          wire.applyState('state', 'bar');
+          expect(wire.getStates()).toEqual({
+            root: { state: 'bar' }
+          });
+        });
+
+        it('includes the states from knots in upper hierarchy', function() {
+          var knot = wire.branch(undefined, 'knot');
+          wire.applyState('state', 'foo');
+          knot.applyState('state', 'bar');
+
+          expect(knot.getStates()).toEqual({
+            'root'      : { state: 'foo' },
+            'root/knot' : { state: 'bar' }
+          });
+        });
+
+        it('can include values from a specific shared runtime object', function() {
+          var knot = wire.branch(undefined, 'knot');
+          wire.applyState('state', 'foo');
+          knot.applyState('state', 'bar');
+
+          expect(knot.getStates('root')).toEqual({
+            state: 'foo'
+          });
+        });
+
+        it('returns an empty object when no shared runtime object exists for the given namespace', function() {
+          var knot = wire.branch(undefined, 'knot');
+          wire.applyState('state', 'foo');
+          knot.applyState('state', 'bar');
+
+          expect(knot.getStates('invalid')).toEqual({});
         });
       });
 

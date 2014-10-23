@@ -340,8 +340,7 @@ define([
     return {
       namespace: this._namespace,
       label: this._label,
-      index: this._index,
-      state: this._state
+      index: this._index
     };
   };
 
@@ -360,9 +359,34 @@ define([
   };
 
   /**
-   * A convenient way to attach any kind of information to the
-   * state data store of a knot. Alternatively it is possible to
-   * apply data by `_.getKnoteInfo().state.foo = 'bar'`.
+   * Returns the states from the knot and from the knots in upper hierarchy
+   * up to the next socket.
+   *
+   * @param {String=} namespace - Choose a specific state object
+   *        from all states by a namespace
+   *
+   * @returns {Object} the requested states.
+   *
+   * @see Wire#applyState
+   * @function Wire#getStates
+   */
+  proto.getStates = function(namespace) {
+    var parent = this._parent,
+        result = {};
+
+    if (!namespace || this._namespace === namespace)
+      result[this._namespace] = clone(this._state, true);
+
+    if (parent !== this)
+      merge(result, parent.getStates());
+
+    return namespace ?
+      result[namespace] || {} :
+      result;
+  };
+
+  /**
+   * Attach any kind of information to the state data store of a knot.
    *
    * @param {String} name - The state name.
    * @param {Object} value - The state value.
@@ -844,9 +868,6 @@ define([
  *           In the wire each knot is connected to knotes in upper hierarchy.
  *           The namespace property represents the hierarchy as a string value
  *           joined by a '/'.
- *
- * @property {Object} state - A simple data store
- *           where any kind of informations can be aligned to.
  *
  * @property {Object} index - A simple data store
  *           where a label maps on a namespace to simplify wired data access.
