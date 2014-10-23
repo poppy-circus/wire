@@ -185,7 +185,7 @@ define([
    * namespace needs to be known. The index maps those namespaces by the label,
    * eg knot:'socket/parent/knot'. If a label is used multiple the indexer will
    * convert the namespace value to an array of namespace. The wire ofters the
-   * method _updateIndex_ to define own namespace mapping.
+   * _index_ property to define own namespace mapping.
    *
    * @param {String} namespace - the knot identifier
    * @param {Object=} data - Any data to store in the wire
@@ -403,25 +403,6 @@ define([
    */
   proto.applyState = function(name, value) {
     this._state[name] = value;
-  };
-
-  /**
-   * A convenient way to modify the relationship between label and
-   * namespace in the index section. Alternatively it is possible to
-   * update index by `_.getKnoteInfo().index.label = 'namespace'`.
-   *
-   * @param {String} label - The index name.
-   * @param {String=} namespace - The index value.
-   * If not defined the own namespace is used.
-   *
-   *
-   * @function Wire#updateIndex
-   */
-  proto.updateIndex = function(label, namespace) {
-    if (!namespace)
-      namespace = this._namespace;
-
-    this.index[label] = namespace;
   };
 
   /**

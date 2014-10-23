@@ -188,7 +188,7 @@ require([
             .branch({child: 1}, 'direct')
             .branch({child: 2}, 'transitve');
 
-          knot.updateIndex('shortcut', 'knot/direct');
+          knot.index.shortcut = 'knot/direct';
           expect(knot.getWireData('shortcut'))
             .toEqual({ child: 1 });
         });
