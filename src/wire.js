@@ -206,11 +206,20 @@ define([
     this._namespace = namespace; // the path from a socket (full knot identifier)
     this._label = namespace.split('/').pop(); // the knot identifier
 
+    /**
+     * A simple data store where a label maps on a namespace
+     * to simplify wired data access.
+     *
+     * @name index
+     * @type {Object}
+     * @memberOf Wire#
+     */
+    this.index = undefined; // simplify access of wired data
+
     // state aspect of the knot info object
     // simple state context of key value pairs that can be shared in the wire
 
     this._state = clone(state, true) || {};
-    this._index = undefined; // simplify access of wired data
 
     // data fields are submitted by instructions
     // they became delegated to a socket and then processed by routes
@@ -303,7 +312,7 @@ define([
     if (!this._wireData)
       this._recall();
 
-    namespace = this._index[namespace] || namespace;
+    namespace = this.index[namespace] || namespace;
     return namespace ?
       this._wireData[namespace] || {} :
       this._wireData;
@@ -339,8 +348,7 @@ define([
 
     return {
       namespace: this._namespace,
-      label: this._label,
-      index: this._index
+      label: this._label
     };
   };
 
@@ -413,7 +421,7 @@ define([
     if (!namespace)
       namespace = this._namespace;
 
-    this._index[label] = namespace;
+    this.index[label] = namespace;
   };
 
   /**
@@ -556,7 +564,7 @@ define([
    * var deepKnot = knot.branch().branch().branch();
    *
    * //share knot state
-   * var otherKnot = socket.branch({}, 'foo', knot.getKnotInfo().state);
+   * var otherKnot = socket.branch({}, 'foo', knot.getStates());
    *
    * @see KnotInfo
    * @see Wire#fetch
@@ -718,7 +726,7 @@ define([
 
     this._namespace = this._label;
     this._wireData  = undefined;
-    this._index     = undefined;
+    this.index     = undefined;
     this._knots     = {};
 
     // dispose routes
@@ -777,7 +785,7 @@ define([
 
     var parent = this._parent,
         label  = this._label,
-        index  = this._index,
+        index  = this.index,
         routes = this.getRoutes(),
         knotData  = {},
         namespace = this._namespace,
@@ -805,14 +813,14 @@ define([
     }
 
     parentIndex = (parent !== this) ?
-      clone(parent.getKnotInfo().index, true) :
+      clone(parent.index, true) :
       {};
 
     forEach(parentIndex, function(namespace, label) {
       this._updateIndex(index, label, namespace);
     }, this);
 
-    this._index = index;
+    this.index = index;
   };
 
   // helper to update the index
@@ -868,9 +876,6 @@ define([
  *           In the wire each knot is connected to knotes in upper hierarchy.
  *           The namespace property represents the hierarchy as a string value
  *           joined by a '/'.
- *
- * @property {Object} index - A simple data store
- *           where a label maps on a namespace to simplify wired data access.
  *
  * @see Wire
  * @namespace KnotInfo

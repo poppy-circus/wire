@@ -95,8 +95,7 @@ require([
         it('returns the actual setup', function() {
           expect(info).toEqual({
             label: 'knot',
-            namespace: 'wire/knot',
-            index: { knot: 'wire/knot' }
+            namespace: 'wire/knot'
           });
         });
 
@@ -107,16 +106,7 @@ require([
 
           expect(wire.getKnotInfo()).toEqual({
             label: 'knot',
-            namespace: 'wire/knot',
-            index: { knot: 'wire/knot' }
-          });
-        });
-
-        it('allows to manipulate the internals of the index object', function() {
-          info.index.foo = 'bar';
-          expect(wire.getKnotInfo().index).toEqual({
-            knot: 'wire/knot',
-            foo: 'bar'
+            namespace: 'wire/knot'
           });
         });
       });
@@ -127,21 +117,6 @@ require([
           var wire = new Wire('knot');
           wire.applyState('foo', 'bar');
           expect(wire.getStates('knot').foo).toBe('bar');
-        });
-      });
-
-      describe('::updateIndex', function() {
-
-        it('represents a convenient way to update the index', function() {
-          var wire = new Wire('knot');
-          wire.updateIndex('foo', 'bar');
-          expect(wire.getKnotInfo().index.foo).toBe('bar');
-        });
-
-        it('uses the knot namespace if namespace argument is missing', function() {
-          var wire = new Wire('knot');
-          wire.updateIndex('foo');
-          expect(wire.getKnotInfo().index.foo).toBe('knot');
         });
       });
 
@@ -289,7 +264,7 @@ require([
           it('rebuilds the index', function() {
             wire.sync();
 
-            expect(knot.getKnotInfo().index)
+            expect(knot.index)
               .toEqual({
                 knot: 'knot',
                 direct: 'knot/direct',
@@ -298,11 +273,11 @@ require([
           });
 
           it('inherites self defined namespace shortcuts', function() {
-            wire.getKnotInfo().index.foo = 'bar';
-            knot.getKnotInfo().index.abc = 'xyz';
+            wire.index.foo = 'bar';
+            knot.index.abc = 'xyz';
             wire.sync();
 
-            expect(knot.getKnotInfo().index)
+            expect(knot.index)
               .toEqual({
                 knot: 'knot',
                 foo: 'bar',
@@ -318,7 +293,7 @@ require([
               .branch(undefined, 'direct');
             wire.sync();
 
-            expect(knot.getKnotInfo().index)
+            expect(knot.index)
               .toEqual({
                 knot: 'knot',
                 direct: [
@@ -335,11 +310,11 @@ require([
               .branch(undefined, 'direct')
               .branch(undefined, 'direct');
 
-            wire.getKnotInfo().index.foo = 'abc';
-            knot.getKnotInfo().index.foo = 'xyz';
+            wire.index.foo = 'abc';
+            knot.index.foo = 'xyz';
             wire.sync();
 
-            expect(knot.getKnotInfo().index)
+            expect(knot.index)
               .toEqual({
                 knot: 'knot',
                 foo: [
