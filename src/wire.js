@@ -199,13 +199,12 @@ define([
   // socket and parent are for internal use and left undocumented
   // they are not available for external usage
 
-  function Wire(namespace, data, state, socket, parent) {
+  function Wire(namespace, data, state, socket_, parent_) {
 
     // namespace and label are for orientation purpose in the wire
 
     this._namespace = namespace; // the path from a socket (full knot identifier)
-    namespace = namespace.split('/');
-    this._label = namespace[namespace.length - 1]; // the knot identifier
+    this._label = namespace.split('/').pop(); // the knot identifier
 
     // state aspect of the knot info object
     // simple state context of key value pairs that can be shared in the wire
@@ -232,8 +231,8 @@ define([
     // became created without socket argument and the instance became the socket
     // itself
 
-    this._socket = socket || this; // the root knot of the wire
-    this._parent = parent || this; // the parent knot in the wire
+    this._socket = socket_ || this; // the root knot of the wire
+    this._parent = parent_ || this; // the parent knot in the wire
 
     // routes are available by a socket
     // knot references will only delegate the instruction to the socket
@@ -654,12 +653,12 @@ define([
   // unlink is for internal use and left undocumented
   // they are not available for external usage
 
-  proto.truncate = function(namespace, unlink) {
+  proto.truncate = function(namespace, unlink_) {
 
     // unlink is a hidden argument that advises a wire
     // parent knot to remove a knot by the given namespace
 
-    if (unlink) {
+    if (unlink_) {
       delete this._knots[namespace];
       return;
     }
@@ -751,7 +750,7 @@ define([
   // with values from upper hierarchy
 
   proto._recall = function() {
-    
+
     var parent = this._parent,
         label  = this._label,
         index  = this._index,
@@ -806,18 +805,18 @@ define([
       switch (true) {
 
         // creates a simple index
-        case !labelIndex: 
+        case !labelIndex:
           index[label] = namespace;
           break;
 
         // append to a complex index
-        case typeof labelIndex.push === 'function': 
+        case typeof labelIndex.push === 'function':
           if(indexOf(labelIndex, namespace) === -1)
             labelIndex.push(namespace);
           break;
 
         // coverts a simple to a complex index
-        case labelIndex !== namespace: 
+        case labelIndex !== namespace:
           index[label] = [labelIndex, namespace];
           break;
       }
