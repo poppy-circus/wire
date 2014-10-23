@@ -32,10 +32,10 @@ require([
 
       describe('normalisation', function() {
 
-        describe('-namspace', function() {
+        describe('-namespace', function() {
 
           it('stores the namespace', function() {
-            expect(new Wire('wire/knot').getKnotInfo().namespace).toBe('wire/knot');
+            expect(new Wire('wire/knot').namespace).toBe('wire/knot');
           });
         });
 
@@ -94,8 +94,7 @@ require([
 
         it('returns the actual setup', function() {
           expect(info).toEqual({
-            label: 'knot',
-            namespace: 'wire/knot'
+            label: 'knot'
           });
         });
 
@@ -105,8 +104,7 @@ require([
           info.index = 'manipulated';
 
           expect(wire.getKnotInfo()).toEqual({
-            label: 'knot',
-            namespace: 'wire/knot'
+            label: 'knot'
           });
         });
       });
@@ -409,7 +407,7 @@ require([
 
         it('constructs the full namespace and applies it to the new Wire instance', function() {
           var branch = wire.branch({}, 'to').branch({}, 'my').branch({}, 'knot');
-          expect(branch.getKnotInfo().namespace).toBe('wire/to/my/knot');
+          expect(branch.namespace).toBe('wire/to/my/knot');
         });
 
         describe('normalisation', function() {
@@ -574,7 +572,7 @@ require([
           });
 
           it('looses the full qualified namespace', function() {
-            expect(childLevel3.getKnotInfo().namespace)
+            expect(childLevel3.namespace)
               .toBe(childLevel3.getKnotInfo().label);
           });
 

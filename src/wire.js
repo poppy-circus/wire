@@ -201,9 +201,17 @@ define([
 
   function Wire(namespace, data, state, socket_, parent_) {
 
-    // namespace and label are for orientation purpose in the wire
-
-    this._namespace = namespace; // the path from a socket (full knot identifier)
+    /**
+     * Includes the full qualified location of a knot.
+     * In the wire each knot is connected to knotes in upper hierarchy.
+     * The namespace property represents the hierarchy as a string value
+     *joined by a '/'.
+     *
+     * @name namespace
+     * @type {String}
+     * @memberOf Wire#
+     */
+    this.namespace = namespace; // the path from a socket (full knot identifier)
     this._label = namespace.split('/').pop(); // the knot identifier
 
     /**
@@ -347,7 +355,6 @@ define([
     // namespace and label can not be modified
 
     return {
-      namespace: this._namespace,
       label: this._label
     };
   };
@@ -382,8 +389,8 @@ define([
     var parent = this._parent,
         result = {};
 
-    if (!namespace || this._namespace === namespace)
-      result[this._namespace] = clone(this._state, true);
+    if (!namespace || this.namespace === namespace)
+      result[this.namespace] = clone(this._state, true);
 
     if (parent !== this)
       merge(result, parent.getStates());
@@ -460,8 +467,8 @@ define([
     // perf opt to prevent each sro to resolve when namespace
     // doesn`t match.
 
-    if (!namespace || this._namespace === namespace) {
-      result[this._namespace] = target;
+    if (!namespace || this.namespace === namespace) {
+      result[this.namespace] = target;
 
       forEach(this._sharedRuntime, function(sro) {
         merge(target, resolveSro(sro));
@@ -567,7 +574,7 @@ define([
       return;
 
     knot = new Wire(
-      this._namespace + '/' + label,
+      this.namespace + '/' + label,
       data,
       state,
       this._socket,
@@ -705,7 +712,7 @@ define([
 
     // clean internal data and destroy dependencies
 
-    this._namespace = this._label;
+    this.namespace = this._label;
     this._wireData  = undefined;
     this.index     = undefined;
     this._knots     = {};
@@ -769,7 +776,7 @@ define([
         index  = this.index,
         routes = this.getRoutes(),
         knotData  = {},
-        namespace = this._namespace,
+        namespace = this.namespace,
         wireData, parentIndex;
 
     // construct wire data object
@@ -852,11 +859,6 @@ define([
  * @property {String} label - The name of a knot.
  *           The label is always unique on the same level in the wire.
  *           It is used to located knotes.
- *
- * @property {String} namespace - Includes the full qualified location of a knot.
- *           In the wire each knot is connected to knotes in upper hierarchy.
- *           The namespace property represents the hierarchy as a string value
- *           joined by a '/'.
  *
  * @see Wire
  * @namespace KnotInfo
