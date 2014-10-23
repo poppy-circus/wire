@@ -212,7 +212,17 @@ define([
      * @memberOf Wire#
      */
     this.namespace = namespace; // the path from a socket (full knot identifier)
-    this._label = namespace.split('/').pop(); // the knot identifier
+
+    /**
+     * The name of a knot.
+     * The label is always unique on the same level in the wire.
+     * It is used to located knotes.
+     *
+     * @name label
+     * @type {String}
+     * @memberOf Wire#
+     */
+    this.label = namespace.split('/').pop(); // the knot identifier
 
     /**
      * A simple data store where a label maps on a namespace
@@ -355,7 +365,7 @@ define([
     // namespace and label can not be modified
 
     return {
-      label: this._label
+      label: this.label
     };
   };
 
@@ -646,7 +656,7 @@ define([
         return this._parent.fetch(path.join('/'));
 
       // no further names in namespace and label matches
-      case (!path.length && namespace === this._label):
+      case (!path.length && namespace === this.label):
         return this;
 
       // return knot, label matches
@@ -704,7 +714,7 @@ define([
     // clear and clone own references, remove childs
     // and unlink socket and parent
 
-    this._parent.truncate(this._label, true);
+    this._parent.truncate(this.label, true);
 
     forEach(this._knots, function(knot) {
       knot.truncate();
@@ -712,7 +722,7 @@ define([
 
     // clean internal data and destroy dependencies
 
-    this.namespace = this._label;
+    this.namespace = this.label;
     this._wireData  = undefined;
     this.index     = undefined;
     this._knots     = {};
@@ -772,7 +782,7 @@ define([
   proto._recall = function() {
 
     var parent = this._parent,
-        label  = this._label,
+        label  = this.label,
         index  = this.index,
         routes = this.getRoutes(),
         knotData  = {},
@@ -845,21 +855,3 @@ define([
 
   return Wire;
 });
-
-//--------------------------------------------------------------------------
-//
-//  KnotInfo
-//
-//--------------------------------------------------------------------------
-
-/**
- * Structure of an info object that represents the local setup of a knot
- * in the Wire.
- *
- * @property {String} label - The name of a knot.
- *           The label is always unique on the same level in the wire.
- *           It is used to located knotes.
- *
- * @see Wire
- * @namespace KnotInfo
- */
