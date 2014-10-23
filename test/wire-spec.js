@@ -46,15 +46,15 @@ require([
           });
         });
 
-        describe('-localData', function() {
+        describe('-data', function() {
 
           it('create a data object if not defined', function() {
-            expect(new Wire('knot').getKnotData()).toEqual({});
+            expect(new Wire('knot').data).toEqual({});
           });
 
           it('reuses the `data` argument if defined', function() {
             var data = {foo: 'bar'};
-            expect(new Wire('knot', data).getKnotData()).toBe(data);
+            expect(new Wire('knot', data).data).toBe(data);
           });
         });
 
@@ -92,14 +92,6 @@ require([
         });
       });
 
-      describe('::getKnotData', function() {
-
-        it('returns the unmerged and unmapped data value', function() {
-          var data = {foo: 'bar'};
-          expect(new Wire('knot', data).getKnotData()).toBe(data);
-        });
-      });
-
       describe('::getWireData', function() {
 
         it('returns the local data in relation to the namespace by default', function() {
@@ -113,7 +105,7 @@ require([
           var wire = new Wire('knot', {foo: 'bar'});
           var data = wire.getWireData();
 
-          wire.getKnotData().bar = 'foo';
+          wire.data.bar = 'foo';
           expect(wire.getWireData())
             .toEqual({
               knot: {foo: 'bar'}
@@ -211,7 +203,7 @@ require([
             .branch({knot: 1}, 'direct')
             .branch({knot: 2}, 'transitve');
 
-          wire.getKnotData().root = true;
+          wire.data.root = true;
           wire.sync();
 
           expect(knot.getWireData())
@@ -390,7 +382,7 @@ require([
 
             it('delegates the value to the new Wire instance if defined', function() {
               var data = {foo: 'bar'};
-              expect(wire.branch(data).getKnotData())
+              expect(wire.branch(data).data)
                 .toBe(data);
             });
           });
@@ -569,7 +561,7 @@ require([
           });
 
           it('owns a clone of the localData dependency', function() {
-            expect(childLevel3.getKnotData()).toEqual(dataLevel3);
+            expect(childLevel3.data).toEqual(dataLevel3);
           });
 
           it('keeps the shared runtime of the knot but not of the wire', function() {
@@ -583,7 +575,7 @@ require([
           });
 
           it('keeps the localData dependency', function() {
-            expect(childLevel3.getKnotData()).toBe(dataLevel3);
+            expect(childLevel3.data).toBe(dataLevel3);
           });
         });
       });
@@ -611,7 +603,7 @@ require([
         });
 
         it('became converted to a new socket', function() {
-          knot.getKnotData().foo = 'bar';
+          knot.data.foo = 'bar';
           knot.insulate();
 
           var child = knot

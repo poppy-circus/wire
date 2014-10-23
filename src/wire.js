@@ -188,7 +188,7 @@ define([
    * _index_ property to define own namespace mapping.
    *
    * @param {String} namespace - the knot identifier
-   * @param {Object=} data - Any data to store in the wire
+   * @param {Object=} knotData - Any data to store in the wire
    *        If not defined an empty object became created
    * @param {Object=} state - the initial state object
    *        If not defined an empty object became created
@@ -199,7 +199,7 @@ define([
   // socket and parent are for internal use and left undocumented
   // they are not available for external usage
 
-  function Wire(namespace, data, state, socket_, parent_) {
+  function Wire(namespace, knotData, state, socket_, parent_) {
 
     /**
      * Includes the full qualified location of a knot.
@@ -211,7 +211,7 @@ define([
      * @type {String}
      * @memberOf Wire#
      */
-    this.namespace = namespace; // the path from a socket (full knot identifier)
+    this.namespace = namespace;
 
     /**
      * The name of a knot.
@@ -222,7 +222,7 @@ define([
      * @type {String}
      * @memberOf Wire#
      */
-    this.label = namespace.split('/').pop(); // the knot identifier
+    this.label = namespace.split('/').pop();
 
     /**
      * A simple data store where a label maps on a namespace
@@ -232,18 +232,32 @@ define([
      * @type {Object}
      * @memberOf Wire#
      */
-    this.index = undefined; // simplify access of wired data
+    this.index = undefined;
+
+    /**
+     * The applied data of a knot.
+     * The difference to `wired data` is, that the local data
+     * is not merged with data from upper hierarchy in the wire.
+     *
+     * @see Wire#getWireData
+     *
+     * @name data
+     * @type {Object}
+     * @default {}
+     * @memberOf Wire#
+     */
+    this.data = knotData || {};
 
     // state aspect of the knot info object
     // simple state context of key value pairs that can be shared in the wire
 
     this._state = clone(state, true) || {};
 
+    // includes the full data set to the next socket in upper hierarchy
     // data fields are submitted by instructions
     // they became delegated to a socket and then processed by routes
 
-    this._knotData = data || {}; // includes the initial data after construction
-    this._wireData = undefined;  // includes the full data set to the next socket in upper hierarchy
+    this._wireData = undefined;
 
     // array of functions that are applied to the wire to receive dynamic data
     // during runtime - the functions arent called with any argument
@@ -334,20 +348,6 @@ define([
     return namespace ?
       this._wireData[namespace] || {} :
       this._wireData;
-  };
-
-  /**
-   * Get the applied data from a knot.
-   * The difference to `detail` is, that the local data
-   * is not merged with data from upper hierarchy in the wire.
-   *
-   * @returns {Object} the applied knot data
-   * @see Wire#getDetail
-   *
-   * @function Wire#getKnotData
-   */
-  proto.getKnotData = function() {
-    return this._knotData;
   };
 
   /**
@@ -772,7 +772,7 @@ define([
 
     // construct wire data object
 
-    knotData[namespace] = this._knotData;
+    knotData[namespace] = this.data;
     wireData = this._wireData = merge({},
       (parent === this ? undefined : parent.getWireData()), // avoid cycles
       knotData
