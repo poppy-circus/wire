@@ -42,7 +42,7 @@ require([
         describe('-label', function() {
 
           it('extracts the label from the namespace argument', function() {
-            expect(new Wire('wire/knot').getKnotInfo().label).toBe('knot');
+            expect(new Wire('wire/knot').label).toBe('knot');
           });
         });
 
@@ -82,32 +82,6 @@ require([
     });
 
     describe('method', function() {
-
-      describe('::getKnotInfo', function() {
-
-        var wire, info;
-
-        beforeEach(function() {
-          wire = new Wire('wire/knot', undefined, {foo: 'bar'});
-          info = wire.getKnotInfo();
-        });
-
-        it('returns the actual setup', function() {
-          expect(info).toEqual({
-            label: 'knot'
-          });
-        });
-
-        it('prevents manipulation of `label`, `namespace` and `index`', function() {
-          info.label = 'manipulated';
-          info.namespace = 'manipulated';
-          info.index = 'manipulated';
-
-          expect(wire.getKnotInfo()).toEqual({
-            label: 'knot'
-          });
-        });
-      });
 
       describe('::applyState', function() {
 
@@ -424,17 +398,17 @@ require([
           describe('-label', function() {
 
             it('create a default value if not defined', function() {
-              expect(wire.branch().getKnotInfo().label)
+              expect(wire.branch().label)
                 .toMatch(/knot\d*/);
             });
 
             it('create a unique value if not defined', function() {
-              expect(wire.branch().getKnotInfo().label !== wire.branch().getKnotInfo().label)
+              expect(wire.branch().label !== wire.branch().label)
                 .toBe(true);
             });
 
             it('creates the new Wire instance with a given value', function() {
-              expect(wire.branch(undefined, 'knot').getKnotInfo().label)
+              expect(wire.branch(undefined, 'knot').label)
                 .toBe('knot');
             });
           });
@@ -554,7 +528,7 @@ require([
             childLevel3 = childLevel2.branch(dataLevel3, 'childLevel3');
 
             childLevel3.applyState('foo', 'bar');
-            infoLevel3 = childLevel3.getKnotInfo();
+            infoLevel3 = childLevel3;
 
             childLevel2.joinSharedRuntime(sro);
             childLevel3.joinSharedRuntime(sro);
@@ -573,7 +547,7 @@ require([
 
           it('looses the full qualified namespace', function() {
             expect(childLevel3.namespace)
-              .toBe(childLevel3.getKnotInfo().label);
+              .toBe(childLevel3.label);
           });
 
           it('looses qualifiedData from upper hierarchy', function() {
@@ -583,7 +557,7 @@ require([
           });
 
           it('looses the index', function() {
-            expect(childLevel3.getKnotInfo().index).toBeUndefined();
+            expect(childLevel3.index).toBeUndefined();
           });
 
           it('looses the knot childs', function() {

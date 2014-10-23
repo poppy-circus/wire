@@ -169,7 +169,7 @@ define([
    * beneath the key _Wire.SRO_ERROR_ in the shared runtime result with the
    * error object value.)
    *
-   * Besides data handling the wire ofters _getKnotInfo_ through a knot
+   * Besides data handling the wire ofters informations through a knot
    * reference. A knot info provides informations about the namespace, the
    * label, the state and the index. Where namespace is the full qualified path
    * from a socket to the affected knot, the `label` represents just the name,
@@ -348,25 +348,6 @@ define([
    */
   proto.getKnotData = function() {
     return this._knotData;
-  };
-
-  /**
-   * Get the local setup from a knot in the wire.
-   *
-   * @returns {KnotInfo} the setup of a wired knot.
-   *          It is not possible to alter the values of a KnotInfo
-   *          except the state informations.
-   *
-   * @function Wire#getKnotInfo
-   */
-  proto.getKnotInfo = function() {
-
-    // create a new knotInfo reference each time to assure that
-    // namespace and label can not be modified
-
-    return {
-      label: this.label
-    };
   };
 
   /**
@@ -660,7 +641,7 @@ define([
         return this;
 
       // return knot, label matches
-      case (knot && !path.length && knot.getKnotInfo().label === namespace):
+      case (knot && !path.length && knot.label === namespace):
         return knot;
 
       // delegate to knot, resolve further names in namespace
