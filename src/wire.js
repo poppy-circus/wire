@@ -703,10 +703,10 @@ define([
 
     // clean internal data and destroy dependencies
 
+    this.index  = undefined;
+    this._knots = {};
     this.namespace = this.label;
-    this._wireData  = undefined;
-    this.index     = undefined;
-    this._knots     = {};
+    this._wireData = undefined;
 
     // dispose routes
 
