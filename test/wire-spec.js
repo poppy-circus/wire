@@ -83,15 +83,6 @@ require([
 
     describe('method', function() {
 
-      describe('::applyState', function() {
-
-        it('adds a state to the knot', function() {
-          var wire = new Wire('knot');
-          wire.applyState('foo', 'bar');
-          expect(wire.getStates('knot').foo).toBe('bar');
-        });
-      });
-
       describe('::getWireData', function() {
 
         it('returns the local data in relation to the namespace by default', function() {
@@ -168,36 +159,197 @@ require([
         });
       });
 
-      describe('getRoutes', function() {
+      describe('::defineRoute', function() {
 
-        it('returns undefined by default', function() {
-          expect(new Wire('wire').getRoutes()).toBeUndefined();
+        it('stores the route setup in the knot', function() {
+          var wire = new Wire('knot');
+          var route = function(){};
+          wire.defineRoute('foo', route);
+
+          expect(wire.getRoutes('knot')).toEqual([{
+            name: 'foo',
+            fn: route,
+            scope: undefined
+          }]);
         });
 
-        it('returns an empty array when knot is a socket but has no routes defined', function() {
-          var wire = new Wire('wire');
-          wire.insulate();
-          expect(wire.getRoutes()).toEqual([]);
+        it('stores the route setup only once per name by overriding', function() {
+          var wire = new Wire('knot');
+          var route = function(){};
+          var route2 = function(){};
+
+          wire.defineRoute('foo', route);
+          wire.defineRoute('foo', route2);
+
+          expect(wire.getRoutes('knot')).toEqual([{
+            name: 'foo',
+            fn: route2,
+            scope: undefined
+          }]);
         });
 
-        it('returns the routes when knot is a socket and routes are defined', function() {
-          var wire = new Wire('wire');
-          var routes = {};
-          wire.insulate(routes);
-          expect(wire.getRoutes()).toBe(routes);
+        it('starts syncronisation', function() {
+          var wire = new Wire('knot');
+          spyOn(wire, 'sync');
+          wire.defineRoute('foo', function(){});
+          expect(wire.sync).toHaveBeenCalledWith();
         });
 
-        it('returns the routes from the next socket', function() {
-          var wire = new Wire('wire');
-          var routes = {};
-          wire.insulate(routes);
-          expect(wire.branch().getRoutes()).toBe(routes);
+        it('wont fail when name is missing', function() {
+          expect(function() {
+            new Wire('knot').defineRoute();
+          }).not.toThrow();
+        });
+
+        it('wont fail when fn is missing', function() {
+          expect(function() {
+            new Wire('knot').defineRoute('foo');
+          }).not.toThrow();
+        });
+
+        describe('route behavior', function() {
+
+          var wire, fn;
+
+          beforeEach(function() {
+            fn = jasmine.createSpy('route');
+            wire = new Wire('knot');
+            wire.defineRoute('myRoute', fn);
+            wire.defineRoute('anotherRoute', function(){});
+          });
+
+          it('applies a function by the given name to the knot', function() {
+            expect(typeof wire.myRoute === 'function').toBe(true);
+          });
+
+          it('calls the route function with all arguments', function() {
+            wire.myRoute('foo', 'bar');
+            expect(fn).toHaveBeenCalledWith(
+              'foo',
+              'bar'
+            );
+          });
+
+          it('returns the return value of the route function', function() {
+            fn.andReturn('foo');
+            expect(wire.myRoute()).toBe('foo');
+          });
+
+          it('overrides the previous route while having the same route name', function() {
+            fn2 = jasmine.createSpy('route2');
+            wire.defineRoute('myRoute', fn2);
+            wire.myRoute();
+            expect(
+              fn2.callCount === 1 &&
+              fn.callCount  === 0
+            ).toBe(true);
+          });
+
+          it('calls the route function within the knot scope by default', function() {
+            var scope;
+            fn = function(){ scope=this; };
+            wire.defineRoute('myRoute', fn);
+            wire.myRoute();
+            expect(scope).toBe(wire);
+          });
+
+          it('can call the route function within the specified scope argument', function() {
+            var scope, scopeValue = {};
+            fn = function(){ scope=this; };
+            wire.defineRoute('myRoute', fn, scopeValue);
+            wire.myRoute();
+            expect(scope).toBe(scopeValue);
+          });
+
+          describe('inherited route behaviour', function() {
+
+            var knot;
+
+            beforeEach(function() {
+              knot = wire.branch();
+            });
+
+            it('inherits the routes from knots in upper hierarchy', function() {
+              expect(typeof knot.myRoute === 'function').toBe(true);
+            });
+
+            it('priorizes own routes over inherited routes', function() {
+              fn2 = jasmine.createSpy('route2');
+              knot.defineRoute('myRoute', fn2);
+              knot.myRoute();
+
+              expect(
+                fn2.callCount === 1 &&
+                fn.callCount  === 0
+              ).toBe(true);
+            });
+          });
+        });
+      });
+
+      describe('::getRoutes', function() {
+
+        var wire;
+
+        beforeEach(function() {
+          wire = new Wire('root');
+        });
+
+        it('returns an empty array by default', function() {
+          expect(wire.getRoutes()).toEqual({});
+        });
+
+        it('returns applied routes from the knot reference', function() {
+          var route = function(){};
+          wire.defineRoute('foo', route);
+          wire.defineRoute('bar', route);
+
+          expect(wire.getRoutes()).toEqual([{
+            name: 'foo',
+            fn: route,
+            scope: undefined
+          }, {
+            name: 'bar',
+            fn: route,
+            scope: undefined
+          }]);
+        });
+
+        it('includes the route names from knots in upper hierarchy', function() {
+          var route = function(){};
+          var knot = wire.branch(undefined, 'knot');
+          wire.defineRoute('foo', route);
+          knot.defineRoute('bar', route);
+
+          expect(knot.getRoutes()).toEqual([{
+            name: 'bar',
+            fn: route,
+            scope: undefined
+          }, {
+            name: 'foo',
+            fn: route,
+            scope: undefined
+          }]);
+        });
+
+        it('includes only unique routes priorized by the caller knot', function() {
+          var route = function(){};
+          var route2 = function(){};
+          var knot = wire.branch(undefined, 'knot');
+          wire.defineRoute('foo', route);
+          knot.defineRoute('foo', route2);
+
+          expect(knot.getRoutes()).toEqual([{
+            name: 'foo',
+            fn: route2,
+            scope: undefined
+          }]);
         });
       });
 
       describe('::sync', function() {
 
-        xit('rebuilds the wire data', function() {
+        it('rebuilds the wire data', function() {
           var wire = new Wire('knot', {knot: 0});
           var knot = wire
             .branch({knot: 1}, 'direct')
@@ -292,61 +444,6 @@ require([
                 ],
                 transitve: 'knot/direct/transitve'
               });
-          });
-        });
-
-        describe('knot route', function() {
-
-          var route, wire, knot;
-
-          beforeEach(function() {
-            route = jasmine.createSpy('route');
-
-            wire = new Wire('wire');
-            wire.insulate({
-              myRoute: route
-            });
-
-            knot = wire.branch();
-          });
-
-          it('defines a delegate function with the name of the route', function() {
-            expect(typeof knot.myRoute).toBe('function');
-          });
-
-          it('delegates to the defined route', function() {
-            knot.myRoute();
-            expect(route).toHaveBeenCalled();
-          });
-
-          it('swollows exceptions', function() {
-            route.andCallFake(function() {
-              throw new Error();
-            });
-
-            knot.myRoute();
-            expect(route).toHaveBeenCalled();
-          });
-
-          it('calls the route with the scope of the knot', function() {
-            var scope;
-
-            route.andCallFake(function() {
-              scope = this;
-            });
-
-            knot.myRoute();
-            expect(scope).toBe(knot);
-          });
-
-          it('sends arguments and the knot reference to the route', function() {
-            knot.myRoute('value');
-            expect(route).toHaveBeenCalledWith('value', knot);
-          });
-
-          it('returns possible values from the route target', function() {
-            route.andReturn('myValue');
-            expect(knot.myRoute('value')).toBe('myValue');
           });
         });
       });
@@ -615,6 +712,15 @@ require([
             'knot/direct': {},
             'knot/direct/transitive': {}
           });
+        });
+      });
+
+      describe('::applyState', function() {
+
+        it('adds a state to the knot', function() {
+          var wire = new Wire('knot');
+          wire.applyState('foo', 'bar');
+          expect(wire.getStates('knot').foo).toBe('bar');
         });
       });
 

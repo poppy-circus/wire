@@ -77,7 +77,7 @@ define([
 
   // creates a delegate function for a route
 
-  var createRouteDelegate = function(name) {
+  /*var createRouteDelegate = function(name) {
 
     return function() {
       var routes = this._socket.getRoutes();
@@ -93,7 +93,7 @@ define([
         return routes[name].apply(this, args);
       } catch(e){}
     };
-  };
+  };*/
 
   //--------------------------------------------------------------------------
   //
@@ -278,7 +278,7 @@ define([
     // routes are available by a socket
     // knot references will only delegate the instruction to the socket
 
-    this._routes = undefined; // collection of methods to process instructions
+    this._routes = {}; // collection of methods to process instructions
 
     this._recall();
   }
@@ -359,9 +359,45 @@ define([
    * @function Wire#getRoutes
    */
   proto.getRoutes = function() {
-    return this._socket === this ?
-      this._routes :
-      this._socket.getRoutes();
+    var parent = this._parent;
+    var i, len, route, routes = [];
+    var ownRoutes = this._routes;
+    var parentRoutes = (parent !== this) ?
+      parent.getRoutes():
+      [];
+
+    forEach(ownRoutes, function(route, name) {
+      routes.push({
+        name: name,
+        fn: route.fn,
+        scope: route.scope
+      });
+    });
+
+    for(i=0, len=parentRoutes.length; i<len; i++) {
+      route = parentRoutes[i];
+      if (!ownRoutes[route.name])
+        routes.push({
+          name: route.name,
+          fn: route.fn,
+          scope: route.scope
+        });
+    }
+
+    return routes;
+  };
+
+  proto.defineRoute = function(name, fn, scope) {
+    if (!name || !fn)
+      return;
+
+    var routes = this._routes;
+    routes[name] = {
+      fn: fn,
+      scope: scope
+    };
+
+    this.sync();
   };
 
   /**
@@ -710,11 +746,10 @@ define([
 
     // dispose routes
 
-    forEach(this.getRoutes(), function(route, name) {
-      delete this[name];
-    }, this);
-
-    this._routes = undefined;
+    var routes = this.getRoutes();
+    for (var i=0, len = routes.length; i<len; i++) {
+      delete this[routes[i].name];
+    }
 
     // unlink parent and socket
 
@@ -747,7 +782,6 @@ define([
    */
   proto.insulate = function(routes) {
     this.truncate();
-    this._routes = routes || {};
     this.sync();
   };
 
@@ -766,8 +800,8 @@ define([
         label  = this.label,
         index  = this.index,
         routes = this.getRoutes(),
-        knotData  = {},
-        namespace = this.namespace,
+        knotData   = {},
+        namespace  = this.namespace,
         wireData, parentIndex;
 
     // construct wire data object
@@ -780,8 +814,13 @@ define([
 
     // apply routes
 
-    forEach(routes, function(route, name) {
-      this[name] = createRouteDelegate(name);
+    lodash.forEach(routes, function(route) {
+      this[route.name] = function() {
+        return route.fn.apply(
+          route.scope || this,
+          arguments
+        );
+      };
     }, this);
 
     // build index
