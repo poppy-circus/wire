@@ -6,6 +6,12 @@ define([
 
   'use strict';
 
+  //--------------------------------------------------------------------------
+  //
+  //  helper
+  //
+  //--------------------------------------------------------------------------
+
   var clone = lodash.clone;
   var merge = lodash.merge;
   var forEach = lodash.forEach;
@@ -90,14 +96,14 @@ define([
    *   and allow data access
    * - **binding**, allow the wire to access dynamic data
    * - **state**, allow the wire to manage states besides data structures
-   * - **command**, allow the wire to delegate the data to
-   *   data handler functions
+   * - **command**, allow the wire to delegate data to
+   *   data handlers
    *
    * ### It is not responsible for:
    *
    * - **mapping**, there is no generic solution for mapping. It is always
    *   bounded to specific project requirements and therefore not
-   *   included. Mapping must be designed as a pre- or post job.
+   *   included. Mapping must be aligned as a pre- or post job.
    *   The only mapping helper that is available, is the mapping
    *   of data namespaces by a knot index.
    *
@@ -113,28 +119,23 @@ define([
    * full path to a knot from the root knot, eg. the created wire instances.
    * A root knot is called `socket` and is just another knot in the wire with
    * advanced capabilities. A socket has the complete feature set of a knot but
-   * allows also the definition of callback functions (`routes`) to operate
-   * on data structures. There isn`t just a single socket - each knot can became
-   * a socket by using the _insulate_ method.
+   * represents an endpoint when working with _fetch_. There isn`t just a single
+   * socket - each knot can became a socket by using the _insulate_ method.
    *
    * A knot - as said - is constructed to transport data. The data input stream
    * is manifold and the wire cares about it. The simplest case is static data.
    * It became imported when calling _branch_. To access static data values a
-   * knot ofters two getter methods, `getKnotData` and `getWireData`. The method
-   * getKnotData delivers just the assigned static data and allows modification
-   * of it. The getWireData method returns a data group that includes all data
-   * sets up to the next socket, which are seperated by the particular
-   * knot namespace.
+   * knot ofters a property `data` and  a ethod`getWireData`. The property data
+   * delivers just the assigned static data and allows modification of it. The
+   * getWireData method returns a data group that includes all data sets up to
+   * the next socket, which are seperated by the particular knot namespace.
    *
    * Another case is dynamic data. There are multiple ways to handle them. One
    * option is to update the knot data and calling _sync_. This will refresh the
    * wire data of a knot and its childs. Second option is to use `routes`.
-   * Routes are defined as a collection of functions that are applied to a
-   * socket knot. Each subordinated knot of a socket will include a delegate
-   * function to the target as route, where dynamic data can be assigned to as an
-   * argument. In this case the wire doesn`t care about the data at all, it just
-   * delegates it. (A route setup will know about the invoker knot, because the
-   * reference is attached to the argument list as its last argument).
+   * Routes are dynamicly added functions to a knot and became inherited.
+   * Each subordinated knot can access the routes up to the next socket.
+   * The wire doesn`t care about the arguments at all, it just delegates them.
    *
    * A last option is possible by using the `shared runtime`. Each knot allows
    * to apply multiple shared runtime objects by _joinSharedRuntime_. A shared
@@ -159,6 +160,7 @@ define([
    * It doesn't affect the carried data at all, but it can be used to control
    * the internal behaviour of routes. To set a new state simply use
    * _applyState_.
+   *
    * The `index` is more or less a helper to improve navigation in the wire
    * data and shared runtime. In those objects the data is grouped by the
    * affected namespace. Sometimes this fact can became problematic because the
@@ -331,10 +333,10 @@ define([
   };
 
   /**
-   * Get the applied routes from the next socket.
+   * Get the applied routes up to the next socket.
    *
-   * @returns {Array|undefined} the defined routes
-   *          When no socket can be found, the result is undefined.
+   * @returns {Array} the defined routes
+   *          When no routes can be found, the result array is empty.
    *
    * @function Wire#getRoutes
    */
@@ -367,6 +369,19 @@ define([
     return routes;
   };
 
+  /**
+   * Add a route to a knot.
+   * All subordinated brnches will inherite the routes. Whenever
+   * a new route became added the childs are syncronized.
+   *
+   * @param {String} name - The route name
+   * @param {Function} fn - A function to execute
+   * @param {Object=} scope - The scope within fn is called
+   *                          If not defined, the scope is the
+   *                          knot reference.
+   *
+   * @function Wire#defineRoute
+   */
   proto.defineRoute = function(name, fn, scope) {
     if (!name || !fn)
       return;
