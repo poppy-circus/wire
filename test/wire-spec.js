@@ -563,17 +563,11 @@ require([
 
       describe('::truncate', function() {
 
-        var root, childLevel1, childLevel2, routes;
+        var root, childLevel1, childLevel2;
 
         beforeEach(function() {
 
-          routes = {
-            myRoute: function(){}
-          };
-
           root = new Wire('wire', {foo: 'bar'});
-          root.insulate(routes);
-
           childLevel1 = root.branch({}, 'childLevel1');
           childLevel2 = childLevel1.branch({}, 'childLevel2');
         });
@@ -617,6 +611,7 @@ require([
             childLevel3 = childLevel2.branch(dataLevel3, 'childLevel3');
 
             childLevel3.applyState('foo', 'bar');
+            childLevel3.defineRoute('myRoute', function(){});
             infoLevel3 = childLevel3;
 
             childLevel2.joinSharedRuntime(sro);

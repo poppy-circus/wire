@@ -75,26 +75,6 @@ define([
     return result;
   };
 
-  // creates a delegate function for a route
-
-  /*var createRouteDelegate = function(name) {
-
-    return function() {
-      var routes = this._socket.getRoutes();
-      var args = Array.prototype.slice.call(arguments);
-      args.push(this);
-
-      try {
-
-        // asure that the route is called in the knot scope
-        // a client may use lodash.bind, therefore the knot reference
-        // is attached to the end of the argument list
-
-        return routes[name].apply(this, args);
-      } catch(e){}
-    };
-  };*/
-
   //--------------------------------------------------------------------------
   //
   //  construct
