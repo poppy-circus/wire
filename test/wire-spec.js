@@ -112,8 +112,8 @@ require([
           expect(knot.getWireData())
             .toEqual({
               "knot": { knot: 0 },
-              "knot/direct": { child: 1 },
-              "knot/direct/transitve": { child: 2 }
+              "/direct": { child: 1 },
+              "/direct/transitve": { child: 2 }
             });
         });
 
@@ -123,7 +123,7 @@ require([
             .branch({child: 1}, 'direct')
             .branch({child: 2}, 'transitve');
 
-          expect(knot.getWireData('knot/direct'))
+          expect(knot.getWireData('/direct'))
             .toEqual({ child: 1 });
         });
 
@@ -143,7 +143,7 @@ require([
             .branch({child: 1}, 'direct')
             .branch({child: 2}, 'transitve');
 
-          knot.index.shortcut = 'knot/direct';
+          knot.index.shortcut = '/direct';
           expect(knot.getWireData('shortcut'))
             .toEqual({ child: 1 });
         });
@@ -361,8 +361,8 @@ require([
           expect(knot.getWireData())
             .toEqual({
               "knot": { knot: 0, root: true },
-              "knot/direct": { knot: 1 },
-              "knot/direct/transitve": { knot: 2 }
+              "/direct": { knot: 1 },
+              "/direct/transitve": { knot: 2 }
             });
         });
 
@@ -383,8 +383,8 @@ require([
             expect(knot.index)
               .toEqual({
                 knot: 'knot',
-                direct: 'knot/direct',
-                transitve: 'knot/direct/transitve'
+                direct: '/direct',
+                transitve: '/direct/transitve'
               });
           });
 
@@ -398,8 +398,8 @@ require([
                 knot: 'knot',
                 foo: 'bar',
                 abc: 'xyz',
-                direct: 'knot/direct',
-                transitve: 'knot/direct/transitve'
+                direct: '/direct',
+                transitve: '/direct/transitve'
               });
           });
 
@@ -413,11 +413,11 @@ require([
               .toEqual({
                 knot: 'knot',
                 direct: [
-                  'knot/direct/transitve/direct/direct',
-                  'knot/direct',
-                  'knot/direct/transitve/direct'
+                  '/direct/transitve/direct/direct',
+                  '/direct',
+                  '/direct/transitve/direct'
                 ],
-                transitve: 'knot/direct/transitve'
+                transitve: '/direct/transitve'
               });
           });
 
@@ -438,11 +438,11 @@ require([
                   'abc'
                 ],
                 direct: [
-                  'knot/direct/transitve/direct/direct',
-                  'knot/direct',
-                  'knot/direct/transitve/direct'
+                  '/direct/transitve/direct/direct',
+                  '/direct',
+                  '/direct/transitve/direct'
                 ],
-                transitve: 'knot/direct/transitve'
+                transitve: '/direct/transitve'
               });
           });
         });
@@ -470,7 +470,7 @@ require([
 
         it('constructs the full namespace and applies it to the new Wire instance', function() {
           var branch = wire.branch({}, 'to').branch({}, 'my').branch({}, 'knot');
-          expect(branch.namespace).toBe('wire/to/my/knot');
+          expect(branch.namespace).toBe('/to/my/knot');
         });
 
         describe('normalisation', function() {
@@ -505,7 +505,7 @@ require([
           describe('-state', function() {
 
             it('delegates the value to the new Wire instance if defined', function() {
-              expect(wire.branch(undefined, 'knot', {foo: 'bar'}).getStates('wire/knot'))
+              expect(wire.branch(undefined, 'knot', {foo: 'bar'}).getStates('/knot'))
                 .toEqual({
                   foo: 'bar'
                 });
@@ -704,8 +704,8 @@ require([
 
           expect(child.getWireData()).toEqual({
             knot: {foo: 'bar'},
-            'knot/direct': {},
-            'knot/direct/transitive': {}
+            '/direct': {},
+            '/direct/transitive': {}
           });
         });
       });
@@ -754,8 +754,8 @@ require([
           knot.applyState('state', 'bar');
 
           expect(knot.getStates()).toEqual({
-            'root'      : { state: 'foo' },
-            'root/knot' : { state: 'bar' }
+            'root'  : { state: 'foo' },
+            '/knot' : { state: 'bar' }
           });
         });
 
@@ -824,8 +824,8 @@ require([
           knot.joinSharedRuntime({ duration: 1 });
 
           expect(knot.getSharedRuntimeValues()).toEqual({
-            'root'      : { duration: 2 },
-            'root/knot' : { duration: 1 }
+            'root'  : { duration: 2 },
+            '/knot' : { duration: 1 }
           });
         });
 

@@ -582,6 +582,9 @@ define([
    */
   proto.branch = function(data, label, state) {
     var knot, knots = this._knots;
+    var namespace = this._socket === this ?
+      '' :
+      this.namespace;
 
     // normalize label
 
@@ -596,7 +599,7 @@ define([
       return;
 
     knot = new Wire(
-      this.namespace + '/' + label,
+      namespace + '/' + label,
       data,
       state,
       this._socket,
