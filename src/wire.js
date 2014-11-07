@@ -233,7 +233,16 @@ define([
     // state aspect of the knot info object
     // simple state context of key value pairs that can be shared in the wire
 
-    this._state = clone(state, true) || {};
+    /**
+     * The state object of a knot.
+     * If the state parameter is defined a copy of the state object became stored,
+     * otherwise it is an empty object.
+     *
+     * @name state
+     * @type {Object}
+     * @memberOf Wire#
+     */
+    this.state = clone(state, true) || {};
 
     // includes the full data set to the next socket in upper hierarchy
     // data fields are submitted by instructions
@@ -405,33 +414,21 @@ define([
    * @returns {Object} the requested states.
    *
    * @see Wire#applyState
-   * @function Wire#getStates
+   * @function Wire#getWireStates
    */
-  proto.getStates = function(namespace) {
+  proto.getWireStates = function(namespace) {
     var parent = this._parent,
         result = {};
 
     if (!namespace || this.namespace === namespace)
-      result[this.namespace] = clone(this._state, true);
+      result[this.namespace] = clone(this.state, true);
 
     if (parent !== this)
-      merge(result, parent.getStates());
+      merge(result, parent.getWireStates());
 
     return namespace ?
       result[namespace] || {} :
       result;
-  };
-
-  /**
-   * Attach any kind of information to the state data store of a knot.
-   *
-   * @param {String} name - The state name.
-   * @param {Object} value - The state value.
-   *
-   * @function Wire#applyState
-   */
-  proto.applyState = function(name, value) {
-    this._state[name] = value;
   };
 
   /**
@@ -574,7 +571,7 @@ define([
    * var deepKnot = knot.branch().branch().branch();
    *
    * //share knot state
-   * var otherKnot = socket.branch({}, 'foo', knot.getStates());
+   * var otherKnot = socket.branch({}, 'foo', knot.getWireStates());
    *
    * @see KnotInfo
    * @see Wire#fetch
