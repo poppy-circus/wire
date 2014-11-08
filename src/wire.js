@@ -125,17 +125,19 @@ define([
    * A knot - as said - is constructed to transport data. The data input stream
    * is manifold and the wire cares about it. The simplest case is static data.
    * It became imported when calling _branch_. To access static data values a
-   * knot ofters a property `data` and  a ethod`getWireData`. The property data
+   * knot ofters a property `data` and a method `getWireData`. The property data
    * delivers just the assigned static data and allows modification of it. The
    * getWireData method returns a data group that includes all data sets up to
-   * the next socket, which are seperated by the particular knot namespace.
+   * the next socket, which are seperated by the particular knot namespace. To
+   * provide the data manipulation in the wire, _syncData_ is used.
    *
    * Another case is dynamic data. There are multiple ways to handle them. One
    * option is to update the knot data and calling _sync_. This will refresh the
-   * wire data of a knot and its childs. Second option is to use `routes`.
-   * Routes are dynamicly added functions to a knot and became inherited.
-   * Each subordinated knot can access the routes up to the next socket.
-   * The wire doesn`t care about the arguments at all, it just delegates them.
+   * wire data, index and routes of a knot and its childs. 
+   * Another option are `routes`. Routes are dynamicly added functions to a knot 
+   * and became inherited. Each subordinated knot can access the routes up to the 
+   * next socket. The wire doesn`t care about the function arguments of a route
+   * at all, it just delegates them.
    *
    * A last option is possible by using the `shared runtime`. Each knot allows
    * to apply multiple shared runtime objects by _joinSharedRuntime_. A shared
@@ -154,20 +156,21 @@ define([
    * reference. A knot info provides informations about the namespace, the
    * label, the state and the index. Where namespace is the full qualified path
    * from a socket to the affected knot, the `label` represents just the name,
-   * eg with a namespace="socket/parent/knot", the label would be knot.
+   * eg with a namespace="socket/parent/knot", the label would be "knot".
    *
    * The `state` is a simple slot to store any details by key-value pairs.
    * It doesn't affect the carried data at all, but it can be used to control
-   * the internal behaviour of routes. To set a new state simply use
-   * _applyState_.
+   * the internal behaviour of routes. To receive all states in the wire from
+   * the socket to the affected knot, _getWireStates_ can be used.
    *
-   * The `index` is more or less a helper to improve navigation in the wire
-   * data and shared runtime. In those objects the data is grouped by the
+   * The `index` is a helper to improve navigation in the wire data, states and
+   * shared runtime structures. In those objects the data is grouped by the
    * affected namespace. Sometimes this fact can became problematic because the
    * namespace needs to be known. The index maps those namespaces by the label,
-   * eg knot:'socket/parent/knot'. If a label is used multiple the indexer will
+   * eg knot:'/parent/knot'. If a label is used multiple the indexer will
    * convert the namespace value to an array of namespace. The wire ofters the
-   * _index_ property to define own namespace mapping.
+   * _index_ property to define own namespace mapping. To inherit the index 
+   * after createing a branch use _syncIndex_.
    *
    * @param {String} namespace - the knot identifier
    * @param {Object=} knotData - Any data to store in the wire
@@ -271,7 +274,7 @@ define([
 
     this._routes = {}; // collection of methods to process instructions
 
-    this._recall();
+    this.sync();
   }
 
   //--------------------------------------------------------------------------
@@ -303,12 +306,12 @@ define([
 
   /**
    * Get the full data set from a knot.
-   * The difference to `knotData` is, that the wire data
+   * The difference to `data` is, that the wire data
    * is merged with data from upper hierarchy in the wire.
    * It is also possible to use a label from the index as namespace shortcut.
    *
-   * Wire data can not be changed anymore unless client objects request
-   * a `sync`.
+   * Wire data can not be changed anymore unless 
+   * client objects request `syncData`.
    *
    * @param {String=} namespace - Choose a specific data set from the wire
    *        data by a namespace
@@ -316,8 +319,8 @@ define([
    * @returns {Object} the merged data or a section of it if namespace
    *          is defined
    *
-   * @see Wire#getKnotData
-   * @see Wire#recall
+   * @see Wire#data
+   * @see Wire#syncData
    *
    * @example
    * var wire = new Wire('knot', {knot: 0});
@@ -326,14 +329,14 @@ define([
    *  .branch({knot: 2}, 'transitve');
    *
    * console.log(knot.getWireData());
-   * console.log(knot.getWireData('knot/direct'));
+   * console.log(knot.getWireData('/direct'));
    *
    * @function Wire#getWireData
    */
   proto.getWireData = function(namespace) {
 
     if (!this._wireData)
-      this._recall();
+      this.sync();
 
     namespace = this.index[namespace] || namespace;
     return namespace ?
@@ -345,7 +348,8 @@ define([
    * Get the applied routes up to the next socket.
    *
    * @returns {Array} the defined routes
-   *          When no routes can be found, the result array is empty.
+   *          When no routes can be found, 
+   *          the result array is empty.
    *
    * @function Wire#getRoutes
    */
@@ -401,7 +405,7 @@ define([
       scope: scope
     };
 
-    this.sync();
+    this.syncRoutes();
   };
 
   /**
@@ -455,13 +459,6 @@ define([
    *  isPlaying: function() { throw new Error(); },
    *  time: 1
    * });
-   *
-   * socket.getSharedRuntimeValues();
-   * // {socket:
-   * //   mediaId: 'my-id',
-   * //   started: false,
-   * //   type: 'premium-content'
-   * // }
    *
    * knot.getSharedRuntimeValues();
    * // {socket: {
@@ -524,26 +521,90 @@ define([
   };
 
   /**
-   * Recalls to the parent and socket knot to rebuild knots
-   * and advises the childs of a knot reference to sync.
-   * It affects the wired data and the routes.
-   *
-   * @example
-   * var root = new Wire('root');
-   * var knot = root.branch({}, 'knot');
-   * knot.getWireData(); // {root: {}, 'wire/knot': {}}
-   *
-   * root.getKnotData().foo = 'bar';
-   * root.sync();
-   * knot.getWireData(); // {root: {foo: 'bar'}, 'wire/knot': {}}
+   * Rebuilds wire data, index and routes and
+   * advises the knot childs to sync.
    *
    * @function Wire#sync
    */
   proto.sync = function() {
-    this._recall();
+    this.syncIndex();
+    this.syncData();    
+    this.syncRoutes();
+  };
+
+  /**
+   * Recalls to the parent and socket knot 
+   * to rebuild wire data.
+   *
+   * @function Wire#syncData
+   */
+  proto.syncData = function() {
+    var parent = this._parent,
+        knotData = {};
+
+    knotData[this.namespace] = this.data;
+    this._wireData = this._wireData = merge({},
+      (parent === this ? undefined : parent.getWireData()), // avoid cycles
+      knotData
+    );
 
     forEach(this._knots, function(knot) {
-      knot.sync();
+      knot.syncData();
+    });
+  };
+
+  /**
+   * Rebulds wire routes of a knot.
+   *
+   * @function Wire#syncRoutes
+   */
+  proto.syncRoutes = function() {
+    var routes = this.getRoutes();
+
+    forEach(routes, function(route) {
+      this[route.name] = function() {
+        return route.fn.apply(
+          route.scope || this,
+          arguments
+        );
+      };
+    }, this);
+
+    forEach(this._knots, function(knot) {
+      knot.syncRoutes();
+    });
+  };
+
+  /**
+   * Recalls to the parent and socket knot 
+   * to rebuild wire index.
+   *
+   * @function Wire#syncIndex
+   */
+  proto.syncIndex = function() {
+    var parent = this._parent,
+        label  = this.label,
+        index  = this.index,
+        namespace  = this.namespace,
+        parentIndex;
+
+    if (!index) {
+      index = {};
+      index[label] = namespace;
+    }
+
+    parentIndex = (parent !== this) ?
+      clone(parent.index, true) :
+      {};
+
+    forEach(parentIndex, function(namespace, label) {
+      this._updateIndex(index, label, namespace);
+    }, this);
+
+    this.index = index;
+
+    forEach(this._knots, function(knot) {
+      knot.syncIndex();
     });
   };
 
@@ -561,19 +622,18 @@ define([
    *
    * @example
    * var socket = new Wire('root');
+   *
+   * //expands the wire with a knot
    * var knot = socket.branch();
    *
-   * //assign data and a label to a knot
+   * //expands the wire with a knot that has a concrete name 
+   * //and applied
    * socket.branch({foo: 'bar'}, 'myKnot');
    * socket.fetch('myKnot');
    *
-   * //transitive knotes
+   * //expand the wire by chaining
    * var deepKnot = knot.branch().branch().branch();
    *
-   * //share knot state
-   * var otherKnot = socket.branch({}, 'foo', knot.getWireStates());
-   *
-   * @see KnotInfo
    * @see Wire#fetch
    * @function Wire#branch
    */
@@ -754,25 +814,8 @@ define([
 
   /**
    * Converts a knot in the wire to a new socket.
-   *
-   * Routes are delegated to the next socket of a knot to process further
-   * actions. The route is called within the scope of the affected knot.
-   * All arguments are delegated and appended by the knot itself as the last
-   * argument. Errors in a route function are swollowed!
-   *
-   * @param {Object=} routes - a collections of functions that
-   *        can be used in the wire as command instructions.
-   *
-   * @example
-   * var route = function() { return this; }
-   *
-   * var wire = new Wire('wire');
-   * wire.insulate({myRoute: route});
-   *
-   * var knot = wire.branch();
-   * knot.myRoute(); //knot
-   *
-   * @see Wire#translate
+   * All routes and childs gets lost.
+   * 
    * @function Wire#insulate
    */
   proto.insulate = function(routes) {
@@ -786,58 +829,8 @@ define([
   //
   //--------------------------------------------------------------------------
 
-  // helper to sync this property set
-  // with values from upper hierarchy
-
-  proto._recall = function() {
-
-    var parent = this._parent,
-        label  = this.label,
-        index  = this.index,
-        routes = this.getRoutes(),
-        knotData   = {},
-        namespace  = this.namespace,
-        wireData, parentIndex;
-
-    // construct wire data object
-
-    knotData[namespace] = this.data;
-    wireData = this._wireData = merge({},
-      (parent === this ? undefined : parent.getWireData()), // avoid cycles
-      knotData
-    );
-
-    // apply routes
-
-    lodash.forEach(routes, function(route) {
-      this[route.name] = function() {
-        return route.fn.apply(
-          route.scope || this,
-          arguments
-        );
-      };
-    }, this);
-
-    // build index
-
-    if (!index) {
-      index = {};
-      index[label] = namespace;
-    }
-
-    parentIndex = (parent !== this) ?
-      clone(parent.index, true) :
-      {};
-
-    forEach(parentIndex, function(namespace, label) {
-      this._updateIndex(index, label, namespace);
-    }, this);
-
-    this.index = index;
-  };
-
   // helper to update the index
-  // reduces _recall method complexity
+  // reduces syncIndex method complexity
 
   proto._updateIndex = function(index, label, namespace) {
 

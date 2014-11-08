@@ -190,9 +190,9 @@ require([
 
         it('starts syncronisation', function() {
           var wire = new Wire('knot');
-          spyOn(wire, 'sync');
+          spyOn(wire, 'syncRoutes');
           wire.defineRoute('foo', function(){});
-          expect(wire.sync).toHaveBeenCalledWith();
+          expect(wire.syncRoutes).toHaveBeenCalledWith();
         });
 
         it('wont fail when name is missing', function() {
@@ -347,7 +347,34 @@ require([
         });
       });
 
-      describe('::sync', function() {
+      describe('sync', function() {
+
+        it('calls syncData', function() {
+          var wire = new Wire('knot');
+          spyOn(wire, 'syncData');
+
+          wire.sync();
+          expect(wire.syncData).toHaveBeenCalled();
+        });
+
+        it('calls syncIndex', function() {
+          var wire = new Wire('knot');
+          spyOn(wire, 'syncIndex');
+
+          wire.sync();
+          expect(wire.syncIndex).toHaveBeenCalled();
+        });
+
+        it('calls syncRoutes', function() {
+          var wire = new Wire('knot');
+          spyOn(wire, 'syncRoutes');
+          
+          wire.sync();
+          expect(wire.syncRoutes).toHaveBeenCalled();
+        });
+      });
+
+      describe('::syncData', function() {
 
         it('rebuilds the wire data', function() {
           var wire = new Wire('knot', {knot: 0});
@@ -356,7 +383,7 @@ require([
             .branch({knot: 2}, 'transitve');
 
           wire.data.root = true;
-          wire.sync();
+          wire.syncData();
 
           expect(knot.getWireData())
             .toEqual({
@@ -365,86 +392,86 @@ require([
               "/direct/transitve": { knot: 2 }
             });
         });
+      });
 
-        describe('index creation', function() {
+      describe('::syncIndex', function() {
 
-          var wire, knot;
+        var wire, knot;
 
-          beforeEach(function() {
-            wire = new Wire('knot');
-            knot = wire
-              .branch(undefined, 'direct')
-              .branch(undefined, 'transitve');
-          });
+        beforeEach(function() {
+          wire = new Wire('knot');
+          knot = wire
+            .branch(undefined, 'direct')
+            .branch(undefined, 'transitve');
+        });
 
-          it('rebuilds the index', function() {
-            wire.sync();
+        it('rebuilds the index', function() {
+          wire.syncIndex();
 
-            expect(knot.index)
-              .toEqual({
-                knot: 'knot',
-                direct: '/direct',
-                transitve: '/direct/transitve'
-              });
-          });
+          expect(knot.index)
+            .toEqual({
+              knot: 'knot',
+              direct: '/direct',
+              transitve: '/direct/transitve'
+            });
+        });
 
-          it('inherites self defined namespace shortcuts', function() {
-            wire.index.foo = 'bar';
-            knot.index.abc = 'xyz';
-            wire.sync();
+        it('inherites self defined namespace shortcuts', function() {
+          wire.index.foo = 'bar';
+          knot.index.abc = 'xyz';
+          wire.syncIndex();
 
-            expect(knot.index)
-              .toEqual({
-                knot: 'knot',
-                foo: 'bar',
-                abc: 'xyz',
-                direct: '/direct',
-                transitve: '/direct/transitve'
-              });
-          });
+          expect(knot.index)
+            .toEqual({
+              knot: 'knot',
+              foo: 'bar',
+              abc: 'xyz',
+              direct: '/direct',
+              transitve: '/direct/transitve'
+            });
+        });
 
-          it('creates an array of namespace on same labels', function() {
-            knot = knot
-              .branch(undefined, 'direct')
-              .branch(undefined, 'direct');
-            wire.sync();
+        it('creates an array of namespace on same labels', function() {
+          knot = knot
+            .branch(undefined, 'direct')
+            .branch(undefined, 'direct');
+          wire.syncIndex();
 
-            expect(knot.index)
-              .toEqual({
-                knot: 'knot',
-                direct: [
-                  '/direct/transitve/direct/direct',
-                  '/direct',
-                  '/direct/transitve/direct'
-                ],
-                transitve: '/direct/transitve'
-              });
-          });
+          expect(knot.index)
+            .toEqual({
+              knot: 'knot',
+              direct: [
+                '/direct/transitve/direct/direct',
+                '/direct',
+                '/direct/transitve/direct'
+              ],
+              transitve: '/direct/transitve'
+            });
+        });
 
-          it('creates an array of inherited namespace shortcuts', function() {
-            knot = knot
-              .branch(undefined, 'direct')
-              .branch(undefined, 'direct');
+        it('creates an array of inherited namespace shortcuts', function() {
+          knot = knot
+            .branch(undefined, 'direct')
+            .branch(undefined, 'direct');
 
-            wire.index.foo = 'abc';
-            knot.index.foo = 'xyz';
-            wire.sync();
+          wire.index.foo = 'abc';
+          knot.index.foo = 'xyz';
+          wire.syncIndex();
 
-            expect(knot.index)
-              .toEqual({
-                knot: 'knot',
-                foo: [
-                  'xyz',
-                  'abc'
-                ],
-                direct: [
-                  '/direct/transitve/direct/direct',
-                  '/direct',
-                  '/direct/transitve/direct'
-                ],
-                transitve: '/direct/transitve'
-              });
-          });
+          expect(knot.index)
+            .toEqual({
+              knot: 'knot',
+              foo: [
+                'xyz',
+                'abc'
+              ],
+              direct: [
+                '/direct/transitve/direct/direct',
+                '/direct',
+                '/direct/transitve/direct'
+              ],
+              transitve: '/direct/transitve'
+            });
         });
       });
 
